@@ -189,7 +189,7 @@ impl Engine {
         let (pane, pad) = self.pane_extent();
         self.pairing
             .ingest(events, scale, now, &mut self.hover_oracle, pane, pad);
-        let wants_cursor = self.pixel_mouse && self.hover_oracle.wants_cursor(now);
+        let wants_cursor = self.term.reports_pixel_mouse() && self.hover_oracle.wants_cursor(now);
         if let Some(native) = &mut self.native {
             native.request_positions(wants_cursor);
         }
@@ -238,18 +238,13 @@ impl Engine {
             logging::info("engine", "native scroll delivering");
         }
         self.last_native_scroll = Some(Instant::now());
-        if self.comp.views[view]
-            .tree
-            .hit_wheel(local.0, local.1)
-            .is_some()
-        {
-            let mut delta_x = 0.0;
-            let mut delta_y = 0.0;
-            for (dx, dy) in &scrolls {
-                delta_x -= dx;
-                delta_y -= dy;
-            }
-            self.emit_wheel(view, local, delta_x, delta_y, true, Mods::default(), out);
+        let mut delta_x = 0.0;
+        let mut delta_y = 0.0;
+        for (dx, dy) in &scrolls {
+            delta_x -= dx;
+            delta_y -= dy;
+        }
+        if self.emit_wheel(view, local, delta_x, delta_y, true, Mods::default(), out) {
             return;
         }
         let Some(area) = self.comp.views[view].tree.scroll_area_at(local.0, local.1) else {

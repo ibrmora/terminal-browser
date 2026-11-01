@@ -298,14 +298,10 @@ pub struct Engine {
     term_focused: bool,
     pub native: Option<NativeScroll>,
     pub use_native: bool,
-    pixel_mouse: bool,
     last_native_scroll: Option<Instant>,
     pairing: NativePairing,
     hover_oracle: HoverOracle,
     pub profile: &'static dyn ScrollProfile,
-    pub(super) last_wheel_tick:
-        Option<(Instant, crate::terminal::MouseKind, u32, u32, crate::terminal::Mods)>,
-    pub(super) wheel_echo_consumed: bool,
     default_menu: bool,
     menu: MenuController,
     inspect_mode: bool,
@@ -386,7 +382,6 @@ impl Engine {
             NativeScroll::spawn(term.waker().ok())
         };
         let use_native = native.is_some();
-        let pixel_mouse = term.reports_pixel_mouse();
         logging::info(
             "engine",
             format!(
@@ -420,13 +415,10 @@ impl Engine {
             term_focused: true,
             native,
             use_native,
-            pixel_mouse,
             last_native_scroll: None,
             pairing: NativePairing::new(),
             hover_oracle: HoverOracle::new(),
             profile: &DEFAULT_PROFILE,
-            last_wheel_tick: None,
-            wheel_echo_consumed: false,
             default_menu: false,
             menu: MenuController::default(),
             inspect_mode: false,
@@ -911,7 +903,6 @@ impl Engine {
             NativeScroll::spawn(self.term.waker().ok())
         };
         self.use_native = self.native.is_some();
-        self.pixel_mouse = self.term.reports_pixel_mouse();
         let colors = self.term.query_colors()?;
         let mut out = Vec::new();
         self.apply_colors(colors, &mut out);
